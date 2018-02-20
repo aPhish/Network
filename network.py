@@ -22,12 +22,12 @@ class Window(Frame):
     def line(self, start_x, start_y, end_x, end_y): 
         self.canvas.create_line(start_x, start_y, end_x, end_y)
 
-    def circle(self, x, y):
-        self.canvas.create_oval(x-size, y-size, x+size, y+size)
+    def circle(self, x, y, colour):
+        self.canvas.create_oval(x-size, y-size, x+size, y+size, outline=colour)
     
-    def cross(self, x, y):
-        self.canvas.create_line(x-size, y-size, x+size, y+size)
-        self.canvas.create_line(x-size, y+size, x+size, y-size)
+    def cross(self, x, y, colour):
+        self.canvas.create_line(x-size, y-size, x+size, y+size, fill=colour)
+        self.canvas.create_line(x-size, y+size, x+size, y-size, fill=colour)
 
 
 class Perceptron:
@@ -35,13 +35,13 @@ class Perceptron:
         self.a = a
         self.b = b
 
-    def classify(self, x, y):
-        return y > self.a * x + self.b
+    def classify(self, p):
+        return p.y() > self.a * p.x() + self.b
 
     def draw(self, window):
         s_x = 0
         s_y = 0
-        if 0 <= self.b <= 100:
+        if 0 <= self.b <= 300:
             s_x = 0
             s_y = self.b
         else:
@@ -50,7 +50,7 @@ class Perceptron:
         e_x = 0
         e_y = 0
         x_intercept = -self.b/self.a
-        if 0 < x_intercept < 100:
+        if 0 < x_intercept < 300:
             e_x = x_intercept
             e_y = 0
         else:
@@ -58,37 +58,68 @@ class Perceptron:
 
         window.line(s_x, s_y, e_x, e_y)
 
-class Result:
 
-    def __init__(self, x, y, value):
-        self.x = x
-        self.y = y
-        self.value = value
+class Point:
 
-    def draw(self, window):
-        if self.value:
-            window.circle(self.x, self.y)
+    def __init__(self, x, y, ty):
+        self._x = x
+        self._y = y
+        self.ty = ty
+
+    def draw(self, window, colour):
+        if self.ty:
+            window.circle(self._x, self._y, colour)
         else:
-            window.cross(self.x, self.y)
+            window.cross(self._x, self._y, colour)
 
     def text(self):
-        if self.value:
+        if self.ty:
             return "o"
         else:
             return "x"
 
+    def x(self):
+        return self._x
+
+    def y(self):
+        return self._y
+
+class Result:
+
+    def __init__(self, point, value):
+        self.point = point
+        if value:
+            self.colour = "#f50"
+        else:
+            self.colour = "#05f"
+
+    def draw(self, window):
+        self.point.draw(window, self.colour)
+
+    def text(self):
+        return self.point.text() + "-" + self.colour
+
 
 window = Window()
 
-p1 = Perceptron(-0.5, 40)
+p1 = Perceptron(-0.5, 140)
 
-points_x = [random.randint(0, 100) for i in range(100)]
-points_y = [random.randint(0, 100) for i in range(100)]
-results = [None] * 100
+points_x = [random.randint(0, 300) for i in range(100)]
+points_y = [random.randint(0, 300) for i in range(100)]
+types = list(map(lambda x:bool(x),[random.randint(0, 1) for i in range(100)]))
+
+print("Types")
+print(types)
+
+points = []
 
 for i in range(100):
-    result_type = p1.classify(points_x[i], points_y[i])
-    results[i] = Result(points_x[i], points_y[i], result_type)
+    points.append(Point(points_x[i], points_y[i], types[i]))
+
+results = []
+
+for p in points:
+    results.append(Result(p, p1.classify(p)))
 
 print("Results: ")
 for i in range(10):
